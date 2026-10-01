@@ -8,6 +8,9 @@ from typing import Any
 
 from app.seed import SEED_ROWS
 
+# 启动检查与就绪探测的工作表：不混入业务模块的运营概览
+SYSTEM_TABLES = {"run_log", "plan_baseline", "archive_record", "probe_channel", "startup_gate", "probe_batch"}
+
 
 class Store:
     def __init__(self) -> None:
@@ -30,6 +33,8 @@ class Store:
     def overview(self) -> dict[str, object]:
         modules: list[dict[str, object]] = []
         for name in self.module_names():
+            if name in SYSTEM_TABLES:
+                continue
             rows = self.rows(name)
             modules.append({
                 "name": name,
