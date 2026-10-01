@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers import ROUTERS
+from app.services.readiness import readiness_service
 from app.store import store
 
 app = FastAPI(title="市政道路桥梁养护管理平台", version="1.0.0")
@@ -24,6 +25,12 @@ app.add_middleware(
 
 for module in ROUTERS:
     app.include_router(module.router)
+
+
+@app.on_event("startup")
+def bootstrap_readiness() -> None:
+    """服务启动即建立四级门禁台账并执行首检；幂等，不覆盖已批准工程。"""
+    readiness_service.bootstrap()
 
 
 @app.get("/api/health")

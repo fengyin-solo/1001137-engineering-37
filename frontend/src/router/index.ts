@@ -19,6 +19,7 @@ const Bearing = () => import('@/views/bearing/index.vue')
 const Project = () => import('@/views/project/index.vue')
 const Vehicle = () => import('@/views/vehicle/index.vue')
 const Material = () => import('@/views/material/index.vue')
+const Readiness = () => import('@/views/readiness/index.vue')
 
 const router = createRouter({
   history: createWebHistory(),
@@ -40,6 +41,7 @@ const router = createRouter({
     { path: '/expansion', name: 'expansion', component: Expansion },
     { path: '/bearing', name: 'bearing', component: Bearing },
     { path: '/project', name: 'project', component: Project },
+    { path: '/readiness', name: 'readiness', component: Readiness },
     { path: '/vehicle', name: 'vehicle', component: Vehicle },
     { path: '/material', name: 'material', component: Material },
   ],

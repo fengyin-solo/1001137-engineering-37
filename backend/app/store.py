@@ -14,12 +14,23 @@ class Store:
         self._tables: dict[str, list[dict[str, Any]]] = {
             name: [dict(row) for row in rows] for name, rows in SEED_ROWS.items()
         }
+        self._meta: dict[str, Any] = {}
 
     def module_names(self) -> list[str]:
         return sorted(self._tables)
 
     def rows(self, module: str) -> list[dict[str, Any]]:
         return self._tables.setdefault(module, [])
+
+    def next_id(self, module: str) -> int:
+        """给没有唯一键的衍生表（日志、待办、探针任务）分配自增主键。"""
+        return max((int(row.get("id", 0)) for row in self.rows(module)), default=0) + 1
+
+    def get_meta(self, key: str, default: Any = None) -> Any:
+        return self._meta.get(key, default)
+
+    def set_meta(self, key: str, value: Any) -> None:
+        self._meta[key] = value
 
     def find(self, module: str, entry_id: int) -> dict[str, Any] | None:
         for row in self.rows(module):

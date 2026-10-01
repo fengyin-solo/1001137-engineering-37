@@ -31,12 +31,21 @@
       <thead>
         <tr>
           <th v-for="column in columns" :key="column">{{ column }}</th>
+          <th>启动门禁</th>
           <th>可执行动作</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="row in rows" :key="String(row.id)">
           <td v-for="column in columns" :key="column">{{ row[column] ?? '—' }}</td>
+          <td>
+            <span v-if="row['门禁结论'] === '可开放'" class="gate-ready">可开放</span>
+            <span v-else-if="String(row['门禁结论'] ?? '').startsWith('已批准')" class="gate-approved">{{ row['门禁结论'] }}</span>
+            <span v-else-if="String(row['门禁结论'] ?? '').startsWith('阻断')" class="gate-blocked">{{ row['门禁结论'] }}</span>
+            <span v-else-if="row['门禁结论']" class="gate-checking">{{ row['门禁结论'] }}</span>
+            <span v-else class="gate-none">未纳管</span>
+            <small v-if="row['门禁阶段']" class="gate-stage">{{ row['门禁阶段'] }}</small>
+          </td>
           <td class="row-actions">
             <button
               v-for="action in actions"
@@ -50,7 +59,7 @@
           </td>
         </tr>
         <tr v-if="!rows.length">
-          <td :colspan="columns.length + 1" class="empty-state">暂无养护工程数据，可先登记养护工程</td>
+          <td :colspan="columns.length + 2" class="empty-state">暂无养护工程数据，可先登记养护工程</td>
         </tr>
       </tbody>
     </table>
@@ -99,10 +108,12 @@ async function runAction(action: string, row: Row) {
   try {
     const response = await request(`${ENDPOINT}/${row.id}/actions`, {
       method: 'POST',
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ values: { action } }),
     })
-    if (!response.ok) {
-      throw new Error('养护工程动作未生效，请稍后重试')
+    const payload = await response.json().catch(() => null)
+    if (!response.ok || !payload?.ok) {
+      // 启动门禁阻断时后端给出具体原因（卡在哪个阶段、什么场景、处置路径）
+      throw new Error(payload?.message ?? '养护工程动作未生效，请稍后重试')
     }
     await reload()
   } catch (error) {
@@ -128,3 +139,12 @@ async function reload() {
 
 onMounted(reload)
 </script>
+
+<style scoped>
+.gate-ready { color: #15803d; font-weight: 600; }
+.gate-approved { color: #1d4ed8; font-weight: 600; }
+.gate-blocked { color: #b91c1c; font-weight: 600; }
+.gate-checking { color: #b45309; }
+.gate-none { color: #94a3b8; }
+.gate-stage { display: block; color: #64748b; font-size: 12px; margin-top: 2px; }
+</style>

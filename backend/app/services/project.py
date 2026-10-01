@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.services.readiness import readiness_service
 from app.store import store
 
 MODULE = "project"
@@ -52,6 +53,14 @@ class ProjectService:
             return None, f"养护工程 {entry_id} 不存在或已归档"
         if action not in ACTION_RULES:
             return None, f"动作「{action}」不属于养护工程可执行范围"
+
+        # 启动门禁硬阻断：四级门禁未放行（含配置/前置件失败）一律不允许批准开工
+        if action == "批准开工":
+            allowed, gate_message = readiness_service.allow_start(str(entry.get("工程编号", "")))
+            if not allowed:
+                entry["abnormal"] = True
+                return None, f"开工被启动门禁阻断：{gate_message}"
+
         target = ACTION_RULES[action]
         if target not in STATUS_ORDER:
             return None, f"目标状态「{target}」不在允许的状态序列里"
